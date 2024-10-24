@@ -1,0 +1,49 @@
+from typing import List, Dict
+
+from pydantic import BaseModel
+
+class QuizOption(BaseModel):
+    option: str
+    is_correct: int
+
+class QuizQuestion(BaseModel):
+    questions: str
+    answer: List[Dict[str, List[QuizOption]]]
+
+class QuizResponse(BaseModel):
+    quiz: List[QuizQuestion]
+
+
+
+@route.get("/api/quiz", response_model=QuizResponse)
+def get_all_quiz(db: Session = Depends(get_db)):
+    quiz_list = db.query(QuizModel).all()
+    db.close()
+
+    # Convert QuizModel instances to the desired response structure
+    quiz_response = QuizResponse(
+        quiz=[
+            QuizQuestion(
+                questions=quiz.questions,
+                answer=[
+                    {
+                        "A": [quiz.option_a, quiz.option_a_correct],
+                        "B": [quiz.option_b, quiz.option_b_correct],
+                        "C": [quiz.option_c, quiz.option_c_correct],
+                        "D": [quiz.option_d, quiz.option_d_correct],
+                    }
+                ],
+            )
+            for quiz in quiz_list
+        ]
+    )
+
+    return quiz_response
+
+# class QuizModel(Base):
+#     __tablename__ = "quiz_dummy"
+#     sl_no = Column(Integer, autoincrement=True, primary_key=True, index=True)
+#     quiz_id = Column(Integer)
+#     questions = Column(String)
+#     answer = Column(String)
+
